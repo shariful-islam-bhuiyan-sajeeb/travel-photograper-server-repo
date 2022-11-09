@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port =process.env.PORT || 5000;
 
 require('dotenv').config();
@@ -19,6 +19,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
     try{
         const travelCollection = client.db('travelGuidline').collection('tourServices')
+        const reviewCollection = client.db('travelGuidline').collection('review')
 
         app.get('/tourServices', async(req,res)=>{
            const query = {}
@@ -35,13 +36,14 @@ async function run(){
 
         })
 
-        // app.delete('/click/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) };
-        //     const result = await orderCollection.deleteOne(query);
-        //     res.send(result);
-        // })
+        app.get('/tourServices/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const tourServices = await travelCollection.findOne(query);
+            res.send(tourServices);
+        });
 
+        
     }
    
     finally{
