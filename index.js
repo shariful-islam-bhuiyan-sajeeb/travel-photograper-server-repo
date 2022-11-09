@@ -43,7 +43,12 @@ async function run(){
             res.send(tourServices);
         });
 
-        
+        // Review api
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await orderCollection.insertOne(review);
+            res.send(result);
+        });
     }
    
     finally{
