@@ -22,7 +22,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if(!authHeader){
-        res.state(401).send({message: 'unauthorized access '})
+        res.state(403).send({message: 'unauthorized access '})
     }
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,function(err,decoded){
@@ -73,7 +73,13 @@ async function run(){
 
         // Review api
         app.get('/review', verifyJWT, async (req,res) =>{
-            
+            const decoded = req.decoded;
+            console.log('insert review api', decoded);
+
+            if (decoded.email !== req.query.email){
+                res.status(403).send({message: 'unauthorized access'})
+            }
+
             let query = {};
             if(req.query.email){
                 query ={
