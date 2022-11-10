@@ -22,12 +22,12 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if(!authHeader){
-        res.state(403).send({message: 'unauthorized access '})
+       return res.state(403).send({message: 'unauthorized access '})
     }
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,function(err,decoded){
     if(err){
-        res.state(401).send({message: 'unauthorized access'})
+      return  res.state(403).send({message: 'unauthorized access'})
     }
     req.decoded = decoded;
     next();
@@ -42,9 +42,9 @@ async function run(){
         const reviewCollection = client.db('travelGuidline').collection('review')
         
 
-        app.post('/jwt', (req, res) =>{
+        app.post('/jwt', async (req, res) =>{
             const user = req.body;
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{expiresIn: '10h'})
+            const token = await jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{expiresIn: '10h'})
             res.send({token})
         })
 
@@ -74,7 +74,7 @@ async function run(){
         // Review api
         app.get('/review', verifyJWT, async (req,res) =>{
             const decoded = req.decoded;
-            console.log('insert review api', decoded);
+           
 
             if (decoded.email !== req.query.email){
                 res.status(403).send({message: 'unauthorized access'})
@@ -91,12 +91,14 @@ async function run(){
             res.send(review)
         });
 
+
         app.post('/review', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
             res.send(result);
         });
 
+        // delete review
         app.delete('/review/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
@@ -105,8 +107,41 @@ async function run(){
             res.send(result);
         })
 
+
+
+        // update review
+        app.put("/update/:id", async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: ObjectId(id) };
+            const review = req.body;
+            const options = { upsert: true };
+            const updateReview = {
+                $set: {
+                    name: review.name,
+
+                    email: review.email,
+                    
+                    message: review.message,
+                    
+                },
+            };
+            const result = await reviewCollection.updateOne(
+                query,
+                updateReview,
+                options
+            );
+            res.send(result);
+        });
+
+        app.get("/reviewOne/:id", async (req, res) => {
+            const id = req.params.id;
+            const status = req.body.status
+            const query = { _id: ObjectId(id) };
+            const result = await reviewCollection.findOne(query);
+            res.send(result);
+        });
+
     }
-   
     finally{
 
     }
